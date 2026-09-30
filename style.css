@@ -434,7 +434,7 @@ html[data-app-theme="comic"] body {
   background-size: 8px 8px;
 }
 html[data-app-theme="comic"] .hero-title,
-html[data-app-theme="comic"] .day-title { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+html[data-app-theme="comic"] .day-title { font-family: 'Montserrat', sans-serif; font-weight: 800; letter-spacing: 0.5px; }
 html[data-app-theme="comic"] .hero { border-radius: 0; border-bottom: 3px solid #111; }
 html[data-app-theme="comic"] .menu { margin-top: 14px; }
 html[data-app-theme="comic"] .menu-btn,
