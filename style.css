@@ -111,6 +111,11 @@ body {
   transform: translateY(2px);
   box-shadow: 0 2px 0 var(--shadow);
 }
+.child-btn.active {
+  background: var(--hero-a);
+  box-shadow: 0 4px 0 #2c5fd6;
+}
+.child-btn.active span { color: #fff; }
 .child-btn .ico { font-size: 22px; }
 
 .hidden { display: none !important; }

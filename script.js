@@ -106,7 +106,10 @@ function showChildMenu() {
     const btn = document.createElement('button');
     btn.className = 'child-btn';
     btn.innerHTML = `<span class="ico">${kid.emoji}</span><span>${escapeHtml(kid.name)}</span>`;
-    btn.addEventListener('click', () => loadPersonWeek(kid.name));
+    btn.addEventListener('click', () => {
+      childMenuEl.querySelectorAll('.child-btn').forEach(b => b.classList.toggle('active', b === btn));
+      loadPersonWeek(kid.name);
+    });
     childMenuEl.appendChild(btn);
   });
   childMenuEl.classList.remove('hidden');
