@@ -334,6 +334,7 @@ html[data-app-theme="board"] {
 }
 html[data-app-theme="board"] body { font-family: 'Space Mono', 'JetBrains Mono', monospace; }
 html[data-app-theme="board"] .hero { border-bottom: 2px solid #ffb100; border-radius: 0; }
+html[data-app-theme="board"] .menu { margin-top: 14px; }
 html[data-app-theme="board"] .hero-title,
 html[data-app-theme="board"] .hero-date { color: #ffb100; }
 html[data-app-theme="board"] .lbl,
@@ -377,6 +378,7 @@ html[data-app-theme="pass"] {
   --shadow: #d8dbe0;
 }
 html[data-app-theme="pass"] .hero { border-radius: 0 0 12px 12px; }
+html[data-app-theme="pass"] .menu { margin-top: 14px; }
 html[data-app-theme="pass"] .menu-btn,
 html[data-app-theme="pass"] .child-btn { border-radius: 8px; border: 1px solid var(--line); box-shadow: none; }
 html[data-app-theme="pass"] .note-chip { border-radius: 6px; box-shadow: none; border: 1px solid var(--line); }
@@ -434,6 +436,7 @@ html[data-app-theme="comic"] body {
 html[data-app-theme="comic"] .hero-title,
 html[data-app-theme="comic"] .day-title { font-family: 'Bangers', cursive; letter-spacing: 1px; }
 html[data-app-theme="comic"] .hero { border-radius: 0; border-bottom: 3px solid #111; }
+html[data-app-theme="comic"] .menu { margin-top: 14px; }
 html[data-app-theme="comic"] .menu-btn,
 html[data-app-theme="comic"] .child-btn {
   border: 2.5px solid #111;
