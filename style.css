@@ -33,6 +33,7 @@ body {
 }
 
 .hero {
+  position: relative;
   background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
   color: #fff;
   padding: 22px 20px 34px;
@@ -178,13 +179,13 @@ body {
 /* ---- Timeline (Calendar Timeline style) ---- */
 .timeline {
   position: relative;
-  padding-left: 46px;
+  padding-left: 58px;
   margin-bottom: 22px;
 }
 .timeline::before {
   content: "";
   position: absolute;
-  left: 38px;
+  left: 50px;
   top: 4px;
   bottom: 4px;
   width: 2px;
@@ -196,7 +197,7 @@ body {
 }
 .t-time {
   position: absolute;
-  left: -46px;
+  left: -58px;
   top: 10px;
   width: 40px;
   text-align: right;
@@ -255,19 +256,19 @@ body {
 
 /* ====== Кнопка налаштувань і модальне вікно вибору стилю ====== */
 .settings-btn {
-  position: fixed;
-  top: max(12px, env(safe-area-inset-top));
+  position: absolute;
+  top: 12px;
   left: 12px;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   border: none;
-  font-size: 18px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 5;
   cursor: pointer;
 }
 
@@ -390,9 +391,9 @@ html[data-app-theme="pass"] .t-block {
 html[data-app-theme="pass"] .t-stub {
   display: block;
   flex-shrink: 0;
-  width: 34px;
+  width: 18px;
   background: var(--accent);
-  color: #fff;
+  color: transparent;
   padding: 10px 0;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
