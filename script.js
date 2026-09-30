@@ -26,6 +26,43 @@ const childMenuEl = document.getElementById('child-menu');
 const heroWeekdayEl = document.getElementById('hero-weekday');
 const heroDateEl = document.getElementById('hero-date');
 const menuButtons = document.querySelectorAll('.menu-btn');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsOverlay = document.getElementById('settings-overlay');
+const applyThemeBtn = document.getElementById('apply-theme-btn');
+
+// ---- Стиль оформлення: збереження вибору в localStorage ----
+const THEME_KEY = 'rozklad_theme';
+
+function getSavedTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'ai-generic'; } catch (e) { return 'ai-generic'; }
+}
+
+function applyTheme(theme) {
+  if (theme === 'ai-generic') {
+    document.documentElement.removeAttribute('data-app-theme');
+  } else {
+    document.documentElement.setAttribute('data-app-theme', theme);
+  }
+}
+
+function initTheme() {
+  const saved = getSavedTheme();
+  applyTheme(saved);
+  const radio = document.querySelector(`input[name="theme"][value="${saved}"]`);
+  if (radio) radio.checked = true;
+}
+
+settingsBtn.addEventListener('click', () => settingsOverlay.classList.remove('hidden'));
+settingsOverlay.addEventListener('click', (e) => {
+  if (e.target === settingsOverlay) settingsOverlay.classList.add('hidden');
+});
+applyThemeBtn.addEventListener('click', () => {
+  const selected = document.querySelector('input[name="theme"]:checked');
+  const theme = selected ? selected.value : 'ai-generic';
+  applyTheme(theme);
+  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  settingsOverlay.classList.add('hidden');
+});
 
 menuButtons.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -186,6 +223,11 @@ function timeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
+// Букви імені одна під одною (вертикально, без повороту) — для стилю "Посадковий талон"
+function verticalLetters(name) {
+  return escapeHtml(name).toUpperCase().split('').join('<br>');
+}
+
 function renderTimeline(entries) {
   let html = '<div class="timeline">';
   entries.forEach(e => {
@@ -193,9 +235,12 @@ function renderTimeline(entries) {
       <div class="t-row">
         <div class="t-time">${escapeHtml(e.start)}</div>
         <div class="t-block ${e.personClass}">
-          <div class="t-person">${e.personEmoji} ${escapeHtml(e.personName)}</div>
-          <div class="t-lesson">${e.lessonEmoji} ${escapeHtml(e.lesson)}</div>
-          <div class="t-range">${escapeHtml(e.start)}–${escapeHtml(e.end)}</div>
+          <div class="t-stub">${verticalLetters(e.personName)}</div>
+          <div class="t-body">
+            <div class="t-person">${e.personEmoji} ${escapeHtml(e.personName)}</div>
+            <div class="t-lesson">${e.lessonEmoji} ${escapeHtml(e.lesson)}</div>
+            <div class="t-range">${escapeHtml(e.start)}–${escapeHtml(e.end)}</div>
+          </div>
         </div>
       </div>`;
   });
@@ -236,8 +281,11 @@ function renderPersonWeek(data) {
           <div class="t-row">
             <div class="t-time">${escapeHtml(l.start)}</div>
             <div class="t-block ${personClass}">
-              <div class="t-lesson">${l.emoji} ${escapeHtml(l.lesson)}</div>
-              <div class="t-range">${escapeHtml(l.start)}–${escapeHtml(l.end)}</div>
+              <div class="t-stub">${verticalLetters(data.name)}</div>
+              <div class="t-body">
+                <div class="t-lesson">${l.emoji} ${escapeHtml(l.lesson)}</div>
+                <div class="t-range">${escapeHtml(l.start)}–${escapeHtml(l.end)}</div>
+              </div>
             </div>
           </div>`;
       });
@@ -255,4 +303,5 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+initTheme();
 initHome();

@@ -7,6 +7,13 @@
   --hero-a: #3f7bff;
   --hero-b: #7fd4ff;
   --shadow: #c9dcff;
+
+  --p-dima: #2fae63;
+  --p-tanya: #e0559b;
+  --p-roma: #cf9a1f;
+  --p-hena: #e08a3c;
+  --p-sveta: #4d8dff;
+  --p-default-c: #8a93ab;
 }
 
 * { box-sizing: border-box; }
@@ -233,3 +240,216 @@ body {
   border-top: 2px dashed var(--line);
   margin: 8px 0 20px;
 }
+
+.t-block.p-dima  { --accent: var(--p-dima); }
+.t-block.p-tanya { --accent: var(--p-tanya); }
+.t-block.p-roma  { --accent: var(--p-roma); }
+.t-block.p-hena  { --accent: var(--p-hena); }
+.t-block.p-sveta { --accent: var(--p-sveta); }
+.t-block.p-default { --accent: var(--p-default-c); }
+
+/* Корінець квитка (тільки для стилю "Посадковий талон") і обгортка тексту */
+.t-block { display: block; }
+.t-stub { display: none; }
+.t-body { display: contents; }
+
+/* ====== Кнопка налаштувань і модальне вікно вибору стилю ====== */
+.settings-btn {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  cursor: pointer;
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.settings-modal {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  max-width: 320px;
+  color: var(--text);
+}
+.settings-modal h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 14px;
+}
+.theme-option:last-of-type { border-bottom: none; }
+.theme-option input { width: 18px; height: 18px; }
+.apply-btn {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--hero-a);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ====================================================================
+   СКІН: Табло вильотів
+   ==================================================================== */
+html[data-app-theme="board"] {
+  --bg: #0a0a0a;
+  --card: #16171a;
+  --text: #eef0f3;
+  --text-dim: #7a7d84;
+  --line: #2a2b2e;
+  --hero-a: #0a0a0a;
+  --hero-b: #0a0a0a;
+  --shadow: #000;
+}
+html[data-app-theme="board"] body { font-family: 'Space Mono', 'JetBrains Mono', monospace; }
+html[data-app-theme="board"] .hero { border-bottom: 2px solid #ffb100; border-radius: 0; }
+html[data-app-theme="board"] .hero-title,
+html[data-app-theme="board"] .hero-date { color: #ffb100; }
+html[data-app-theme="board"] .lbl,
+html[data-app-theme="board"] .day-title,
+html[data-app-theme="board"] .t-lesson,
+html[data-app-theme="board"] .t-person { text-transform: uppercase; letter-spacing: 0.5px; }
+html[data-app-theme="board"] .menu-btn,
+html[data-app-theme="board"] .child-btn {
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+html[data-app-theme="board"] .menu-btn.active,
+html[data-app-theme="board"] .child-btn.active {
+  background: #ffb100;
+  box-shadow: none;
+}
+html[data-app-theme="board"] .menu-btn.active .lbl,
+html[data-app-theme="board"] .child-btn.active span { color: #0a0a0a; }
+html[data-app-theme="board"] .note-chip { box-shadow: none; border: 1px solid var(--line); border-radius: 4px; }
+html[data-app-theme="board"] .t-block {
+  background: var(--card);
+  border-radius: 2px;
+  border-left: 4px solid var(--accent);
+  color: var(--text);
+}
+html[data-app-theme="board"] .t-block .t-person,
+html[data-app-theme="board"] .t-block .t-range { color: var(--accent); opacity: 1; }
+
+/* ====================================================================
+   СКІН: Посадковий талон
+   ==================================================================== */
+html[data-app-theme="pass"] {
+  --bg: #ece9e2;
+  --card: #ffffff;
+  --text: #1e2430;
+  --text-dim: #6b7280;
+  --line: #d8dbe0;
+  --hero-a: #1e2430;
+  --hero-b: #1e2430;
+  --shadow: #d8dbe0;
+}
+html[data-app-theme="pass"] .hero { border-radius: 0 0 12px 12px; }
+html[data-app-theme="pass"] .menu-btn,
+html[data-app-theme="pass"] .child-btn { border-radius: 8px; border: 1px solid var(--line); box-shadow: none; }
+html[data-app-theme="pass"] .note-chip { border-radius: 6px; box-shadow: none; border: 1px solid var(--line); }
+html[data-app-theme="pass"] .t-block {
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+html[data-app-theme="pass"] .t-stub {
+  display: block;
+  flex-shrink: 0;
+  width: 34px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+html[data-app-theme="pass"] .t-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 10px;
+  flex: 1;
+  border-left: 1px dashed var(--line);
+}
+html[data-app-theme="pass"] .t-block .t-person,
+html[data-app-theme="pass"] .t-block .t-lesson,
+html[data-app-theme="pass"] .t-block .t-range { color: var(--text); opacity: 1; font-family: system-ui, sans-serif; font-weight: 700; }
+html[data-app-theme="pass"] .t-block .t-range { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); font-weight: 600; }
+
+/* ====================================================================
+   СКІН: Комікс
+   ==================================================================== */
+html[data-app-theme="comic"] {
+  --bg: #fdf4e3;
+  --card: #ffffff;
+  --text: #111111;
+  --text-dim: #555555;
+  --line: #111111;
+  --hero-a: #111111;
+  --hero-b: #111111;
+  --shadow: transparent;
+}
+html[data-app-theme="comic"] body {
+  background-image: radial-gradient(#e8dfb8 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+html[data-app-theme="comic"] .hero-title,
+html[data-app-theme="comic"] .day-title { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+html[data-app-theme="comic"] .hero { border-radius: 0; border-bottom: 3px solid #111; }
+html[data-app-theme="comic"] .menu-btn,
+html[data-app-theme="comic"] .child-btn {
+  border: 2.5px solid #111;
+  border-radius: 10px;
+  box-shadow: none;
+}
+html[data-app-theme="comic"] .menu-btn.active,
+html[data-app-theme="comic"] .child-btn.active {
+  background: #ff4d4d;
+  box-shadow: none;
+  border-color: #111;
+}
+html[data-app-theme="comic"] .note-chip { border: 2px solid #111; box-shadow: none; }
+html[data-app-theme="comic"] .t-block {
+  background: var(--card);
+  border: 2.5px solid #111;
+  border-radius: 6px;
+  box-shadow: none;
+}
+html[data-app-theme="comic"] .t-block .t-person { color: var(--accent); font-weight: 800; }

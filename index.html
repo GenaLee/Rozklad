@@ -8,9 +8,24 @@
 <link rel="icon" href="icon.jpeg">
 <link rel="apple-touch-icon" href="icon.jpeg">
 <meta name="theme-color" content="#3f7bff">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Bangers&display=swap">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
+  <button id="settings-btn" class="settings-btn" aria-label="Налаштування">⚙️</button>
+
+  <div id="settings-overlay" class="settings-overlay hidden">
+    <div class="settings-modal">
+      <h2>Стиль оформлення</h2>
+      <label class="theme-option"><input type="radio" name="theme" value="ai-generic"> AI-generic</label>
+      <label class="theme-option"><input type="radio" name="theme" value="board"> Табло вильотів</label>
+      <label class="theme-option"><input type="radio" name="theme" value="pass"> Посадковий талон</label>
+      <label class="theme-option"><input type="radio" name="theme" value="comic"> Комікс</label>
+      <button id="apply-theme-btn" class="apply-btn">Застосувати</button>
+    </div>
+  </div>
+
   <div class="app">
     <header class="hero">
       <div class="hero-title" id="hero-weekday"></div>
@@ -29,6 +44,6 @@
     <main id="content" class="content"></main>
   </div>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
