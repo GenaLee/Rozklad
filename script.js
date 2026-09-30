@@ -95,10 +95,68 @@ function showError(message) {
 }
 
 async function fetchJson(action, extraParams) {
-  const params = new URLSearchParams({ action, ...extraParams });
-  const response = await fetch(`${API_URL}?${params.toString()}`);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
+  const params = new URLSearchParams({ action, ...extraParams, _t: Date.now() });
+  const url = `${API_URL}?${params.toString()}`;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (err) {
+      if (attempt === 3) throw err;
+      await new Promise(r => setTimeout(r, 800 * attempt));
+    }
+  }
+}
+
+// ---- Кеш "показуємо миттєво, оновлюємо у фоні лише якщо таблиця дійсно змінилась" ----
+function cacheKeyFor(action, extraParams) {
+  return 'rozklad_cache_' + action + (extraParams ? '_' + JSON.stringify(extraParams) : '');
+}
+
+function readCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function writeCache(key, lastModified, payload) {
+  try { localStorage.setItem(key, JSON.stringify({ lastModified, payload })); } catch (e) {}
+}
+
+function extractLastModified(payload) {
+  if (Array.isArray(payload)) return payload[0] ? payload[0].lastModified : null;
+  return payload ? payload.lastModified : null;
+}
+
+// Показує кеш миттєво (якщо є), а тим часом перевіряє свіжість і перемальовує лише при реальній зміні
+async function loadWithCache(action, extraParams, render) {
+  const key = cacheKeyFor(action, extraParams);
+  const cached = readCache(key);
+
+  scrollToContent();
+
+  if (cached) {
+    render(cached.payload);
+  } else {
+    showLoading();
+  }
+
+  try {
+    const fresh = await fetchJson(action, extraParams);
+    const freshLm = extractLastModified(fresh);
+    if (!cached || cached.lastModified !== freshLm) {
+      render(fresh);
+    }
+    writeCache(key, freshLm, fresh);
+  } catch (err) {
+    if (!cached) showError(err.message);
+    // якщо кеш є — тихо залишаємо його на екрані навіть якщо мережа підвела
+  }
+
+  scrollToContent();
 }
 
 // ---- Головний екран: день тижня + дата ----
@@ -121,20 +179,15 @@ function formatDate(date) {
 
 // ---- Кнопки меню ----
 async function loadAndRender(action) {
-  showLoading();
-  scrollToContent();
-  try {
-    if (action === 'today' || action === 'tomorrow') {
-      const data = await fetchJson(action);
+  if (action === 'today' || action === 'tomorrow') {
+    await loadWithCache(action, undefined, (data) => {
       contentEl.innerHTML = renderDay(data);
-    } else if (action === 'week') {
-      const days = await fetchJson('week');
+    });
+  } else if (action === 'week') {
+    await loadWithCache('week', undefined, (days) => {
       contentEl.innerHTML = days.map((d, i) => renderDay(d) + (i < days.length - 1 ? '<hr class="day-separator">' : '')).join('');
-    }
-  } catch (err) {
-    showError(err.message);
+    });
   }
-  scrollToContent();
 }
 
 function showChildMenu() {
@@ -153,19 +206,13 @@ function showChildMenu() {
 }
 
 async function loadPersonWeek(name) {
-  showLoading();
-  scrollToContent();
-  try {
-    const data = await fetchJson('person', { name });
+  await loadWithCache('person', { name }, (data) => {
     if (data.error) {
       showError(data.error);
       return;
     }
     contentEl.innerHTML = renderPersonWeek(data);
-  } catch (err) {
-    showError(err.message);
-  }
-  scrollToContent();
+  });
 }
 
 // ---- Рендер одного дня: хронологічна шкала всіх людей разом ----
