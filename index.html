@@ -29,7 +29,12 @@
   <div class="app">
     <header class="hero">
       <button id="settings-btn" class="settings-btn" aria-label="Налаштування">⚙️</button>
-      <button id="refresh-btn" class="refresh-btn" aria-label="Оновити">🔄</button>
+      <button id="refresh-btn" class="refresh-btn" aria-label="Оновити">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 11A8 8 0 0 0 4.6 8M4 5v4h4"/>
+          <path d="M4 13a8 8 0 0 0 15.4 3M20 19v-4h-4"/>
+        </svg>
+      </button>
       <div class="hero-title" id="hero-weekday"></div>
       <div class="hero-date" id="hero-date"></div>
     </header>
