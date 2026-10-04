@@ -255,10 +255,9 @@ body {
 .t-body { display: contents; }
 
 /* ====== Кнопка налаштувань і модальне вікно вибору стилю ====== */
-.settings-btn {
+.settings-btn, .refresh-btn {
   position: absolute;
   top: 12px;
-  left: 12px;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -271,6 +270,47 @@ body {
   z-index: 5;
   cursor: pointer;
 }
+.settings-btn { left: 12px; }
+.refresh-btn { right: 12px; }
+.refresh-btn.spinning { animation: spin 0.8s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.pull-indicator {
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: height 0.15s ease;
+  text-align: center;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--card);
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 200;
+  max-width: 80vw;
+  text-align: center;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.toast-error { background: #d64545; color: #fff; }
 
 .settings-overlay {
   position: fixed;

@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#3f7bff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@800&display=swap">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <div id="settings-overlay" class="settings-overlay hidden">
@@ -24,9 +24,12 @@
     </div>
   </div>
 
+  <div id="pull-indicator" class="pull-indicator"></div>
+
   <div class="app">
     <header class="hero">
       <button id="settings-btn" class="settings-btn" aria-label="Налаштування">⚙️</button>
+      <button id="refresh-btn" class="refresh-btn" aria-label="Оновити">🔄</button>
       <div class="hero-title" id="hero-weekday"></div>
       <div class="hero-date" id="hero-date"></div>
     </header>
@@ -43,6 +46,8 @@
     <main id="content" class="content"></main>
   </div>
 
-  <script src="script.js?v=9"></script>
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js?v=10"></script>
 </body>
 </html>

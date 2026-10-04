@@ -29,6 +29,20 @@ const menuButtons = document.querySelectorAll('.menu-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const settingsOverlay = document.getElementById('settings-overlay');
 const applyThemeBtn = document.getElementById('apply-theme-btn');
+const refreshBtn = document.getElementById('refresh-btn');
+const pullIndicatorEl = document.getElementById('pull-indicator');
+const toastEl = document.getElementById('toast');
+
+// Що зараз показано на екрані — потрібно, щоб кнопка/жест "Оновити" знали, що саме перезавантажити
+let currentView = { type: 'today' };
+
+function showToast(message, isError) {
+  toastEl.textContent = message;
+  toastEl.classList.toggle('toast-error', !!isError);
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._hideTimer);
+  toastEl._hideTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
 
 // ---- Стиль оформлення: збереження вибору в localStorage ----
 const THEME_KEY = 'rozklad_theme';
@@ -131,32 +145,40 @@ function extractLastModified(payload) {
   return payload ? payload.lastModified : null;
 }
 
-// Показує кеш миттєво (якщо є), а тим часом перевіряє свіжість і перемальовує лише при реальній зміні
-async function loadWithCache(action, extraParams, render) {
+// Показує кеш миттєво (якщо є), а тим часом перевіряє свіжість і перемальовує лише при реальній зміні.
+// force = true (кнопка/жест "Оновити"): завжди перемальовує і явно повідомляє про результат.
+async function loadWithCache(action, extraParams, render, force) {
   const key = cacheKeyFor(action, extraParams);
   const cached = readCache(key);
 
-  scrollToContent();
-
-  if (cached) {
-    render(cached.payload);
-  } else {
-    showLoading();
+  if (!force) {
+    scrollToContent();
+    if (cached) {
+      render(cached.payload);
+    } else {
+      showLoading();
+    }
   }
 
   try {
     const fresh = await fetchJson(action, extraParams);
     const freshLm = extractLastModified(fresh);
-    if (!cached || cached.lastModified !== freshLm) {
+    if (force || !cached || cached.lastModified !== freshLm) {
       render(fresh);
     }
     writeCache(key, freshLm, fresh);
+    if (force) showToast('Оновлено ✓');
   } catch (err) {
-    if (!cached) showError(err.message);
-    // якщо кеш є — тихо залишаємо його на екрані навіть якщо мережа підвела
+    if (!cached) {
+      showError(err.message);
+    } else {
+      // Кеш лишається на екрані, але тепер явно повідомляємо, що оновлення не вдалося —
+      // замість того, щоб мовчки показувати застарілі дані без жодного сигналу.
+      showToast('Не вдалося оновити дані. Показано попередню версію.', true);
+    }
   }
 
-  scrollToContent();
+  if (!force) scrollToContent();
 }
 
 // ---- Головний екран: день тижня + дата ----
@@ -178,15 +200,17 @@ function formatDate(date) {
 }
 
 // ---- Кнопки меню ----
-async function loadAndRender(action) {
+async function loadAndRender(action, force) {
+  if (!force) currentView = { type: action };
+
   if (action === 'today' || action === 'tomorrow') {
     await loadWithCache(action, undefined, (data) => {
       contentEl.innerHTML = renderDay(data);
-    });
+    }, force);
   } else if (action === 'week') {
     await loadWithCache('week', undefined, (days) => {
       contentEl.innerHTML = days.map((d, i) => renderDay(d) + (i < days.length - 1 ? '<hr class="day-separator">' : '')).join('');
-    });
+    }, force);
   }
 }
 
@@ -205,14 +229,26 @@ function showChildMenu() {
   childMenuEl.classList.remove('hidden');
 }
 
-async function loadPersonWeek(name) {
+async function loadPersonWeek(name, force) {
+  if (!force) currentView = { type: 'person', name };
+
   await loadWithCache('person', { name }, (data) => {
     if (data.error) {
       showError(data.error);
       return;
     }
     contentEl.innerHTML = renderPersonWeek(data);
-  });
+  }, force);
+}
+
+// Викликається кнопкою "Оновити" та жестом "потягнути вниз" — завжди перевіряє мережу,
+// навіть якщо локальний кеш виглядає свіжим, і явно показує результат.
+async function refreshCurrent() {
+  if (currentView.type === 'person') {
+    await loadPersonWeek(currentView.name, true);
+  } else {
+    await loadAndRender(currentView.type, true);
+  }
 }
 
 // ---- Рендер одного дня: хронологічна шкала всіх людей разом ----
@@ -348,6 +384,58 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// ---- Кнопка "Оновити" ----
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.classList.add('spinning');
+  await refreshCurrent();
+  refreshBtn.classList.remove('spinning');
+});
+
+// ---- Pull-to-refresh: потягнути екран вниз, коли він уже прогорнутий до самого верху ----
+const PULL_THRESHOLD = 70;
+const PULL_MAX = 100;
+let pullStartY = null;
+let isPulling = false;
+
+document.addEventListener('touchstart', (e) => {
+  const scrollTop = document.scrollingElement ? document.scrollingElement.scrollTop : 0;
+  if (scrollTop > 0) return;
+  pullStartY = e.touches[0].clientY;
+  isPulling = true;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isPulling || pullStartY === null) return;
+  const dy = e.touches[0].clientY - pullStartY;
+  if (dy <= 0) {
+    resetPull();
+    return;
+  }
+  const dist = Math.min(dy, PULL_MAX);
+  pullIndicatorEl.style.height = dist + 'px';
+  pullIndicatorEl.textContent = dist > PULL_THRESHOLD ? '↑ Відпустіть, щоб оновити' : '↓ Потягніть, щоб оновити';
+}, { passive: true });
+
+document.addEventListener('touchend', async () => {
+  if (!isPulling) return;
+  const dist = parseInt(pullIndicatorEl.style.height, 10) || 0;
+  isPulling = false;
+  pullStartY = null;
+
+  if (dist > PULL_THRESHOLD) {
+    pullIndicatorEl.textContent = '⏳ Оновлення...';
+    pullIndicatorEl.style.height = '50px';
+    await refreshCurrent();
+  }
+  pullIndicatorEl.style.height = '0px';
+});
+
+function resetPull() {
+  isPulling = false;
+  pullStartY = null;
+  pullIndicatorEl.style.height = '0px';
 }
 
 initTheme();
