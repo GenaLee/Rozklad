@@ -101,22 +101,31 @@ applyThemeBtn.addEventListener('click', () => {
   settingsOverlay.classList.add('hidden');
 });
 
+// Кнопки-перемикачі (toggle): повторне натискання ховає свою панель/кнопки
+const TOGGLE_PANELS = {
+  child: childMenuEl,
+  weekday: weekdayMenuEl,
+  events: eventsPanelEl
+};
+
 menuButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     const action = btn.dataset.action;
+    const panelEl = TOGGLE_PANELS[action];
 
-    if (action === 'weekday' || action === 'events') {
-      const panelEl = action === 'weekday' ? weekdayMenuEl : eventsPanelEl;
-      const otherPanelEl = action === 'weekday' ? eventsPanelEl : weekdayMenuEl;
+    if (panelEl) {
       const isOpen = !panelEl.classList.contains('hidden');
 
-      childMenuEl.classList.add('hidden');
-      otherPanelEl.classList.add('hidden');
+      // Ховаємо всі інші панелі-перемикачі
+      Object.keys(TOGGLE_PANELS).forEach(key => {
+        if (key !== action) TOGGLE_PANELS[key].classList.add('hidden');
+      });
 
       if (isOpen) {
         // Повторне натискання — сховати кнопки/панель і розклад (toggle вимкнути)
         panelEl.classList.add('hidden');
         if (action === 'weekday') weekdayMenuEl.innerHTML = '';
+        if (action === 'child') childMenuEl.innerHTML = '';
         contentEl.innerHTML = '';
         btn.classList.remove('active');
         return;
@@ -125,6 +134,8 @@ menuButtons.forEach(btn => {
       setActiveButton(btn);
       if (action === 'weekday') {
         showWeekdayMenu();
+      } else if (action === 'child') {
+        showChildMenu();
       } else {
         eventsPanelEl.classList.remove('hidden');
       }
@@ -132,16 +143,8 @@ menuButtons.forEach(btn => {
     }
 
     setActiveButton(btn);
-    eventsPanelEl.classList.add('hidden');
-
-    if (action === 'child') {
-      weekdayMenuEl.classList.add('hidden');
-      showChildMenu();
-    } else {
-      childMenuEl.classList.add('hidden');
-      weekdayMenuEl.classList.add('hidden');
-      loadAndRender(action);
-    }
+    Object.values(TOGGLE_PANELS).forEach(el => el.classList.add('hidden'));
+    loadAndRender(action);
   });
 });
 
