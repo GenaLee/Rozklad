@@ -340,7 +340,15 @@ body {
   padding: 20px;
   width: 100%;
   max-width: 320px;
+  max-height: 90vh;
+  overflow-y: auto;
   color: var(--text);
+}
+.event-form-modal {
+  max-width: 360px;
+}
+.event-form-modal .add-event-form {
+  margin-top: 0;
 }
 .settings-modal h2 {
   margin: 0 0 12px;

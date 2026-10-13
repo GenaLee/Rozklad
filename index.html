@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#3f7bff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@800&display=swap">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
   <div id="settings-overlay" class="settings-overlay hidden">
@@ -21,6 +21,33 @@
       <label class="theme-option"><input type="radio" name="theme" value="pass"> Посадковий талон</label>
       <label class="theme-option"><input type="radio" name="theme" value="comic"> Комікс</label>
       <button id="apply-theme-btn" class="apply-btn">Застосувати</button>
+    </div>
+  </div>
+
+  <div id="event-form-overlay" class="settings-overlay hidden">
+    <div class="settings-modal event-form-modal">
+      <form id="add-event-form" class="add-event-form">
+        <div id="event-form-title" class="event-form-title">Нова подія</div>
+        <label>Кого стосується
+          <select id="event-who"></select>
+        </label>
+        <label>Дата
+          <input type="date" id="event-date" required>
+        </label>
+        <label>Час початку <span class="opt-label">(необов'язково)</span>
+          <input type="time" id="event-begin">
+        </label>
+        <label>Час закінчення <span class="opt-label">(необов'язково)</span>
+          <input type="time" id="event-end">
+        </label>
+        <label>Опис
+          <textarea id="event-description" rows="2" required></textarea>
+        </label>
+        <div class="event-form-actions">
+          <button type="button" id="cancel-event-btn" class="btn-cancel">Скасувати</button>
+          <button type="submit" class="apply-btn">Зберегти</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -70,29 +97,6 @@
       <div id="events-list"></div>
 
       <button id="toggle-add-event-btn" class="add-event-toggle" type="button">+ Додати подію</button>
-
-      <form id="add-event-form" class="add-event-form hidden">
-        <div id="event-form-title" class="event-form-title">Нова подія</div>
-        <label>Кого стосується
-          <select id="event-who"></select>
-        </label>
-        <label>Дата
-          <input type="date" id="event-date" required>
-        </label>
-        <label>Час початку <span class="opt-label">(необов'язково)</span>
-          <input type="time" id="event-begin">
-        </label>
-        <label>Час закінчення <span class="opt-label">(необов'язково)</span>
-          <input type="time" id="event-end">
-        </label>
-        <label>Опис
-          <textarea id="event-description" rows="2" required></textarea>
-        </label>
-        <div class="event-form-actions">
-          <button type="button" id="cancel-event-btn" class="btn-cancel">Скасувати</button>
-          <button type="submit" class="apply-btn">Зберегти</button>
-        </div>
-      </form>
     </div>
 
     <main id="content" class="content"></main>
@@ -100,6 +104,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="script.js?v=15"></script>
+  <script src="script.js?v=16"></script>
 </body>
 </html>

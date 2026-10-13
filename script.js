@@ -46,6 +46,7 @@ const eventEndInput = document.getElementById('event-end');
 const eventDescriptionInput = document.getElementById('event-description');
 const eventFormTitleEl = document.getElementById('event-form-title');
 const cancelEventBtn = document.getElementById('cancel-event-btn');
+const eventFormOverlayEl = document.getElementById('event-form-overlay');
 const heroWeekdayEl = document.getElementById('hero-weekday');
 const heroDateEl = document.getElementById('hero-date');
 const menuButtons = document.querySelectorAll('.menu-btn');
@@ -388,11 +389,12 @@ function renderEventsList(data) {
 
   let html = '';
   events.forEach(ev => {
-    const timeLabel = ev.beginTime ? (ev.endTime ? `${ev.beginTime}–${ev.endTime}` : ev.beginTime) : 'без часу';
+    const timeLabel = ev.beginTime ? (ev.endTime ? `${ev.beginTime}–${ev.endTime}` : ev.beginTime) : '';
+    const dateTimeLabel = timeLabel ? `${ev.date} · ${timeLabel}` : ev.date;
     html += `
       <div class="event-card">
         <div class="event-card-main">
-          <div class="event-card-top">${ev.emoji} <strong>${escapeHtml(ev.who)}</strong> — ${escapeHtml(ev.date)} · ${escapeHtml(timeLabel)}</div>
+          <div class="event-card-top">${ev.emoji} <strong>${escapeHtml(ev.who)}</strong> — ${escapeHtml(dateTimeLabel)}</div>
           <div class="event-card-desc">${escapeHtml(ev.description)}</div>
         </div>
         <div class="event-card-actions">
@@ -471,8 +473,7 @@ function openEventFormForAdd() {
   addEventFormEl.reset();
   editingRowNumber = null;
   eventFormTitleEl.textContent = 'Нова подія';
-  addEventFormEl.classList.remove('hidden');
-  toggleAddEventBtn.textContent = '− Сховати форму';
+  eventFormOverlayEl.classList.remove('hidden');
 }
 
 function openEventFormForEdit(ev) {
@@ -483,29 +484,26 @@ function openEventFormForEdit(ev) {
   eventEndInput.value = ev.endTime || '';
   eventDescriptionInput.value = ev.description || '';
   eventFormTitleEl.textContent = 'Редагування події';
-  addEventFormEl.classList.remove('hidden');
-  toggleAddEventBtn.textContent = '− Сховати форму';
-  addEventFormEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  eventFormOverlayEl.classList.remove('hidden');
 }
 
 function closeEventForm() {
   addEventFormEl.reset();
-  addEventFormEl.classList.add('hidden');
+  eventFormOverlayEl.classList.add('hidden');
   editingRowNumber = null;
   eventFormTitleEl.textContent = 'Нова подія';
-  toggleAddEventBtn.textContent = '+ Додати подію';
 }
 
 toggleAddEventBtn.addEventListener('click', () => {
-  if (addEventFormEl.classList.contains('hidden')) {
-    openEventFormForAdd();
-  } else {
-    closeEventForm();
-  }
+  openEventFormForAdd();
 });
 
 cancelEventBtn.addEventListener('click', () => {
   closeEventForm();
+});
+
+eventFormOverlayEl.addEventListener('click', (e) => {
+  if (e.target === eventFormOverlayEl) closeEventForm();
 });
 
 addEventFormEl.addEventListener('submit', async (e) => {
