@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#3f7bff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@800&display=swap">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <div id="settings-overlay" class="settings-overlay hidden">
@@ -49,15 +49,17 @@
       <button class="menu-btn" data-action="tomorrow"><span class="ico">📆</span><span class="lbl">Завтра</span></button>
       <button class="menu-btn" data-action="week"><span class="ico">🗓️</span><span class="lbl">До кінця тижня</span></button>
       <button class="menu-btn" data-action="child"><span class="ico">🧒</span><span class="lbl">Дитина</span></button>
+      <button class="menu-btn menu-btn-wide" data-action="weekday"><span class="ico">📌</span><span class="lbl">День тижня</span></button>
     </nav>
 
     <div id="child-menu" class="child-menu hidden"></div>
+    <div id="weekday-menu" class="child-menu hidden"></div>
 
     <main id="content" class="content"></main>
   </div>
 
   <div id="toast" class="toast"></div>
 
-  <script src="script.js?v=11"></script>
+  <script src="script.js?v=12"></script>
 </body>
 </html>

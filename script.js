@@ -21,8 +21,11 @@ const KIDS = [
   { name: "Діма", emoji: "👦" }
 ];
 
+const WEEK_ORDER = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+
 const contentEl = document.getElementById('content');
 const childMenuEl = document.getElementById('child-menu');
+const weekdayMenuEl = document.getElementById('weekday-menu');
 const heroWeekdayEl = document.getElementById('hero-weekday');
 const heroDateEl = document.getElementById('hero-date');
 const menuButtons = document.querySelectorAll('.menu-btn');
@@ -84,9 +87,14 @@ menuButtons.forEach(btn => {
     const action = btn.dataset.action;
 
     if (action === 'child') {
+      weekdayMenuEl.classList.add('hidden');
       showChildMenu();
+    } else if (action === 'weekday') {
+      childMenuEl.classList.add('hidden');
+      showWeekdayMenu();
     } else {
       childMenuEl.classList.add('hidden');
+      weekdayMenuEl.classList.add('hidden');
       loadAndRender(action);
     }
   });
@@ -214,6 +222,33 @@ async function loadAndRender(action, force) {
   }
 }
 
+function showWeekdayMenu() {
+  weekdayMenuEl.innerHTML = '';
+  WEEK_ORDER.forEach(weekday => {
+    const btn = document.createElement('button');
+    btn.className = 'child-btn';
+    btn.innerHTML = `<span>${escapeHtml(weekday)}</span>`;
+    btn.addEventListener('click', () => {
+      weekdayMenuEl.querySelectorAll('.child-btn').forEach(b => b.classList.toggle('active', b === btn));
+      loadWeekday(weekday);
+    });
+    weekdayMenuEl.appendChild(btn);
+  });
+  weekdayMenuEl.classList.remove('hidden');
+}
+
+async function loadWeekday(weekday, force) {
+  if (!force) currentView = { type: 'day', weekday };
+
+  await loadWithCache('day', { weekday }, (data) => {
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+    contentEl.innerHTML = renderDay(data);
+  }, force);
+}
+
 function showChildMenu() {
   childMenuEl.innerHTML = '';
   KIDS.forEach(kid => {
@@ -246,6 +281,8 @@ async function loadPersonWeek(name, force) {
 async function refreshCurrent() {
   if (currentView.type === 'person') {
     await loadPersonWeek(currentView.name, true);
+  } else if (currentView.type === 'day') {
+    await loadWeekday(currentView.weekday, true);
   } else {
     await loadAndRender(currentView.type, true);
   }
