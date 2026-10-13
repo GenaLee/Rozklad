@@ -23,9 +23,29 @@ const KIDS = [
 
 const WEEK_ORDER = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
+// Усі члени родини — для випадаючого списку "Кого стосується" у формі події
+const ALL_PEOPLE = KIDS.concat([
+  { name: "Гена", emoji: "👨" },
+  { name: "Свєта", emoji: "👩" }
+]);
+
 const contentEl = document.getElementById('content');
 const childMenuEl = document.getElementById('child-menu');
 const weekdayMenuEl = document.getElementById('weekday-menu');
+const eventsPanelEl = document.getElementById('events-panel');
+const eventsStartInput = document.getElementById('events-start');
+const eventsEndInput = document.getElementById('events-end');
+const eventsShowBtn = document.getElementById('events-show-btn');
+const eventsListEl = document.getElementById('events-list');
+const toggleAddEventBtn = document.getElementById('toggle-add-event-btn');
+const addEventFormEl = document.getElementById('add-event-form');
+const eventWhoSelect = document.getElementById('event-who');
+const eventDateInput = document.getElementById('event-date');
+const eventBeginInput = document.getElementById('event-begin');
+const eventEndInput = document.getElementById('event-end');
+const eventDescriptionInput = document.getElementById('event-description');
+const eventFormTitleEl = document.getElementById('event-form-title');
+const cancelEventBtn = document.getElementById('cancel-event-btn');
 const heroWeekdayEl = document.getElementById('hero-weekday');
 const heroDateEl = document.getElementById('hero-date');
 const menuButtons = document.querySelectorAll('.menu-btn');
@@ -83,15 +103,40 @@ applyThemeBtn.addEventListener('click', () => {
 
 menuButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    setActiveButton(btn);
     const action = btn.dataset.action;
+
+    if (action === 'weekday' || action === 'events') {
+      const panelEl = action === 'weekday' ? weekdayMenuEl : eventsPanelEl;
+      const otherPanelEl = action === 'weekday' ? eventsPanelEl : weekdayMenuEl;
+      const isOpen = !panelEl.classList.contains('hidden');
+
+      childMenuEl.classList.add('hidden');
+      otherPanelEl.classList.add('hidden');
+
+      if (isOpen) {
+        // Повторне натискання — сховати кнопки/панель і розклад (toggle вимкнути)
+        panelEl.classList.add('hidden');
+        if (action === 'weekday') weekdayMenuEl.innerHTML = '';
+        contentEl.innerHTML = '';
+        btn.classList.remove('active');
+        return;
+      }
+
+      setActiveButton(btn);
+      if (action === 'weekday') {
+        showWeekdayMenu();
+      } else {
+        eventsPanelEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    setActiveButton(btn);
+    eventsPanelEl.classList.add('hidden');
 
     if (action === 'child') {
       weekdayMenuEl.classList.add('hidden');
       showChildMenu();
-    } else if (action === 'weekday') {
-      childMenuEl.classList.add('hidden');
-      showWeekdayMenu();
     } else {
       childMenuEl.classList.add('hidden');
       weekdayMenuEl.classList.add('hidden');
@@ -283,23 +328,239 @@ async function refreshCurrent() {
     await loadPersonWeek(currentView.name, true);
   } else if (currentView.type === 'day') {
     await loadWeekday(currentView.weekday, true);
+  } else if (currentView.type === 'eventsRange') {
+    await loadEventsRange(currentView.start, currentView.end, true);
   } else {
     await loadAndRender(currentView.type, true);
   }
 }
 
+// ---- Панель "Події": перегляд за період ----
+async function loadEventsRange(start, end, force) {
+  if (!force) currentView = { type: 'eventsRange', start, end };
+
+  const key = cacheKeyFor('eventsRange', { start, end });
+  const cached = readCache(key);
+
+  if (!force) {
+    if (cached) {
+      renderEventsList(cached.payload);
+    } else {
+      eventsListEl.innerHTML = '<p class="loading">Завантаження...</p>';
+    }
+  }
+
+  try {
+    const fresh = await fetchJson('eventsRange', { start, end });
+    const freshLm = extractLastModified(fresh);
+    if (force || !cached || cached.lastModified !== freshLm) {
+      renderEventsList(fresh);
+    }
+    writeCache(key, freshLm, fresh);
+    if (force) showToast('Оновлено ✓');
+  } catch (err) {
+    if (!cached) {
+      eventsListEl.innerHTML = `<p class="error">Помилка: ${escapeHtml(err.message)}</p>`;
+    } else {
+      showToast('Не вдалося оновити дані. Показано попередню версію.', true);
+    }
+  }
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
+}
+
+function renderEventsList(data) {
+  if (data.error) {
+    eventsListEl.innerHTML = `<p class="error">Помилка: ${escapeHtml(data.error)}</p>`;
+    return;
+  }
+
+  const events = data.events || [];
+  if (events.length === 0) {
+    eventsListEl.innerHTML = '<p class="hint">Немає подій за цей період.</p>';
+    return;
+  }
+
+  let html = '';
+  events.forEach(ev => {
+    const timeLabel = ev.beginTime ? (ev.endTime ? `${ev.beginTime}–${ev.endTime}` : ev.beginTime) : 'без часу';
+    html += `
+      <div class="event-card">
+        <div class="event-card-main">
+          <div class="event-card-top">${ev.emoji} <strong>${escapeHtml(ev.who)}</strong> — ${escapeHtml(ev.date)} · ${escapeHtml(timeLabel)}</div>
+          <div class="event-card-desc">${escapeHtml(ev.description)}</div>
+        </div>
+        <div class="event-card-actions">
+          <button type="button" class="icon-btn event-edit-btn"
+            data-row="${ev.rowNumber}" data-who="${escapeAttr(ev.who)}" data-date="${escapeAttr(ev.rawDate)}"
+            data-begin="${escapeAttr(ev.beginTime)}" data-end="${escapeAttr(ev.endTime)}" data-desc="${escapeAttr(ev.description)}"
+            aria-label="Редагувати">✏️</button>
+          <button type="button" class="icon-btn event-delete-btn" data-row="${ev.rowNumber}" aria-label="Видалити">🗑️</button>
+        </div>
+      </div>`;
+  });
+  eventsListEl.innerHTML = html;
+}
+
+eventsShowBtn.addEventListener('click', () => {
+  const start = eventsStartInput.value;
+  const end = eventsEndInput.value;
+  if (!start || !end) {
+    showToast('Оберіть обидві дати', true);
+    return;
+  }
+  loadEventsRange(start, end, false);
+});
+
+function refreshEventsListIfShown() {
+  if (currentView.type === 'eventsRange') {
+    loadEventsRange(currentView.start, currentView.end, true);
+  }
+}
+
+eventsListEl.addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('.event-edit-btn');
+  if (editBtn) {
+    openEventFormForEdit({
+      rowNumber: editBtn.dataset.row,
+      who: editBtn.dataset.who,
+      date: editBtn.dataset.date,
+      beginTime: editBtn.dataset.begin,
+      endTime: editBtn.dataset.end,
+      description: editBtn.dataset.desc
+    });
+    return;
+  }
+
+  const deleteBtn = e.target.closest('.event-delete-btn');
+  if (deleteBtn) {
+    const rowNumber = deleteBtn.dataset.row;
+    if (!confirm('Видалити цю подію? Цю дію не можна скасувати.')) return;
+
+    deleteBtn.disabled = true;
+    try {
+      const body = new URLSearchParams({ action: 'deleteEvent', rowNumber });
+      const response = await fetch(API_URL, { method: 'POST', body });
+      const result = await response.json();
+      if (result.error) {
+        showToast('Помилка: ' + result.error, true);
+      } else {
+        showToast('Подію видалено ✓');
+        refreshEventsListIfShown();
+      }
+    } catch (err) {
+      showToast('Не вдалося видалити подію: ' + err.message, true);
+    }
+    deleteBtn.disabled = false;
+  }
+});
+
+// ---- Панель "Події": форма додавання/редагування події ----
+let editingRowNumber = null;
+
+function populateEventWhoSelect() {
+  eventWhoSelect.innerHTML = ALL_PEOPLE.map(p => `<option value="${escapeHtml(p.name)}">${p.emoji} ${escapeHtml(p.name)}</option>`).join('');
+}
+
+function openEventFormForAdd() {
+  addEventFormEl.reset();
+  editingRowNumber = null;
+  eventFormTitleEl.textContent = 'Нова подія';
+  addEventFormEl.classList.remove('hidden');
+  toggleAddEventBtn.textContent = '− Сховати форму';
+}
+
+function openEventFormForEdit(ev) {
+  editingRowNumber = ev.rowNumber;
+  eventWhoSelect.value = ev.who;
+  eventDateInput.value = ev.date;
+  eventBeginInput.value = ev.beginTime || '';
+  eventEndInput.value = ev.endTime || '';
+  eventDescriptionInput.value = ev.description || '';
+  eventFormTitleEl.textContent = 'Редагування події';
+  addEventFormEl.classList.remove('hidden');
+  toggleAddEventBtn.textContent = '− Сховати форму';
+  addEventFormEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function closeEventForm() {
+  addEventFormEl.reset();
+  addEventFormEl.classList.add('hidden');
+  editingRowNumber = null;
+  eventFormTitleEl.textContent = 'Нова подія';
+  toggleAddEventBtn.textContent = '+ Додати подію';
+}
+
+toggleAddEventBtn.addEventListener('click', () => {
+  if (addEventFormEl.classList.contains('hidden')) {
+    openEventFormForAdd();
+  } else {
+    closeEventForm();
+  }
+});
+
+cancelEventBtn.addEventListener('click', () => {
+  closeEventForm();
+});
+
+addEventFormEl.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const who = eventWhoSelect.value;
+  const date = eventDateInput.value;
+  const begin = eventBeginInput.value;
+  const end = eventEndInput.value;
+  const description = eventDescriptionInput.value.trim();
+
+  if (!who || !date || !description) {
+    showToast('Заповніть кого стосується, дату і опис', true);
+    return;
+  }
+
+  const submitBtn = addEventFormEl.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+
+  const isEditing = !!editingRowNumber;
+  const params = { action: isEditing ? 'updateEvent' : 'addEvent', who, date, beginTime: begin, endTime: end, description };
+  if (isEditing) params.rowNumber = editingRowNumber;
+
+  try {
+    const body = new URLSearchParams(params);
+    const response = await fetch(API_URL, { method: 'POST', body });
+    const result = await response.json();
+
+    if (result.error) {
+      showToast('Помилка: ' + result.error, true);
+    } else {
+      showToast(isEditing ? 'Подію оновлено ✓' : 'Подію додано ✓');
+      closeEventForm();
+      refreshEventsListIfShown();
+    }
+  } catch (err) {
+    showToast('Не вдалося зберегти подію: ' + err.message, true);
+  }
+
+  submitBtn.disabled = false;
+});
+
 // ---- Рендер одного дня: хронологічна шкала всіх людей разом ----
 function renderDay(data) {
   let html = `<div class="day-title">${escapeHtml(data.dayUa)}, ${escapeHtml(data.date)}</div>`;
 
-  const notes = data.specialNotes || { noGadgets: [], pe: [] };
-  if (notes.noGadgets.length > 0 || notes.pe.length > 0) {
+  const notes = data.specialNotes || { noGadgets: [], pe: [], events: [] };
+  const notesEvents = notes.events || [];
+  if (notes.noGadgets.length > 0 || notes.pe.length > 0 || notesEvents.length > 0) {
     html += '<div class="notes-row">';
     notes.noGadgets.forEach(p => {
       html += `<div class="note-chip gadgets">${p.emoji} ${escapeHtml(p.name)} — День без гаджетів 📵</div>`;
     });
     notes.pe.forEach(p => {
       html += `<div class="note-chip pe">${p.emoji} ${escapeHtml(p.name)} — Фізкультура 🏃</div>`;
+    });
+    notesEvents.forEach(ev => {
+      html += `<div class="note-chip event">${ev.emoji} ${escapeHtml(ev.name)} — ${escapeHtml(ev.description)} 🎉</div>`;
     });
     html += '</div>';
   }
@@ -348,6 +609,10 @@ function verticalLetters(name) {
   return escapeHtml(name).toUpperCase().split('').join('<br>');
 }
 
+function formatTimeRange(start, end) {
+  return end ? `${start}–${end}` : start;
+}
+
 function renderTimeline(entries) {
   let html = '<div class="timeline">';
   entries.forEach(e => {
@@ -359,7 +624,7 @@ function renderTimeline(entries) {
           <div class="t-body">
             <div class="t-person">${e.personEmoji} ${escapeHtml(e.personName)}</div>
             <div class="t-lesson">${e.lessonEmoji} ${escapeHtml(e.lesson)}</div>
-            <div class="t-range">${escapeHtml(e.start)}–${escapeHtml(e.end)}</div>
+            <div class="t-range">${escapeHtml(formatTimeRange(e.start, e.end))}</div>
           </div>
         </div>
       </div>`;
@@ -373,7 +638,7 @@ function renderPersonWeek(data) {
   const personClass = PERSON_CLASS[data.name] || 'p-default';
   let html = `<div class="day-title">${data.emoji} ${escapeHtml(data.name)} — тиждень</div>`;
 
-  const relevantDays = data.days.filter(d => d.lessons.length > 0 || d.noGadgets || d.pe);
+  const relevantDays = data.days.filter(d => d.lessons.length > 0 || d.noGadgets || d.pe || (d.events && d.events.length > 0));
 
   if (relevantDays.length === 0) {
     html += '<p class="hint">На цьому тижні занять немає. 🎉</p>';
@@ -383,7 +648,8 @@ function renderPersonWeek(data) {
   relevantDays.forEach(d => {
     html += `<div class="day-title" style="font-size:13px;opacity:0.8;">${escapeHtml(DAY_NAMES_FULL[d.dayUa] || d.dayUa)}</div>`;
 
-    if (d.noGadgets || d.pe) {
+    const dayEvents = d.events || [];
+    if (d.noGadgets || d.pe || dayEvents.length > 0) {
       html += '<div class="notes-row">';
       if (d.noGadgets) {
         html += `<div class="note-chip gadgets">${data.emoji} День без гаджетів 📵</div>`;
@@ -391,6 +657,9 @@ function renderPersonWeek(data) {
       if (d.pe) {
         html += `<div class="note-chip pe">${data.emoji} Фізкультура 🏃</div>`;
       }
+      dayEvents.forEach(desc => {
+        html += `<div class="note-chip event">${data.emoji} ${escapeHtml(desc)} 🎉</div>`;
+      });
       html += '</div>';
     }
 
@@ -404,7 +673,7 @@ function renderPersonWeek(data) {
               <div class="t-stub">${verticalLetters(data.name)}</div>
               <div class="t-body">
                 <div class="t-lesson">${l.emoji} ${escapeHtml(l.lesson)}</div>
-                <div class="t-range">${escapeHtml(l.start)}–${escapeHtml(l.end)}</div>
+                <div class="t-range">${escapeHtml(formatTimeRange(l.start, l.end))}</div>
               </div>
             </div>
           </div>`;
@@ -477,3 +746,4 @@ function resetPull() {
 
 initTheme();
 initHome();
+populateEventWhoSelect();
