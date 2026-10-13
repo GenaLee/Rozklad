@@ -747,6 +747,27 @@ function resetPull() {
   pullIndicatorEl.style.height = '0px';
 }
 
+// Дати "Від"/"До" за замовчанням — понеділок і неділя поточного тижня
+function formatDateKey(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function setDefaultEventsRange() {
+  const today = new Date();
+  const daysSinceMonday = (today.getDay() + 6) % 7; // Пн=0
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysSinceMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  eventsStartInput.value = formatDateKey(monday);
+  eventsEndInput.value = formatDateKey(sunday);
+}
+
 initTheme();
 initHome();
 populateEventWhoSelect();
+setDefaultEventsRange();
