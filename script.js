@@ -109,6 +109,26 @@ const TOGGLE_PANELS = {
   events: eventsPanelEl
 };
 
+// Кожен розділ пам'ятає свій останній екран: при перемиканні він ховається,
+// а при поверненні миттєво відновлюється (дані потім лише звіряються з кешем).
+let currentSection = null;
+const sectionSnapshots = {};
+let renderToken = 0;
+
+function saveSectionSnapshot() {
+  renderToken++;
+  if (currentSection) {
+    sectionSnapshots[currentSection] = { html: contentEl.innerHTML, view: currentView };
+  }
+}
+
+function restoreSectionSnapshot(action) {
+  const snap = sectionSnapshots[action];
+  contentEl.innerHTML = snap ? snap.html : '';
+  if (snap) currentView = snap.view;
+  return snap;
+}
+
 menuButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     const action = btn.dataset.action;
@@ -122,29 +142,42 @@ menuButtons.forEach(btn => {
         if (key !== action) TOGGLE_PANELS[key].classList.add('hidden');
       });
 
+      saveSectionSnapshot();
+
       if (isOpen) {
         // Повторне натискання — сховати кнопки/панель і розклад (toggle вимкнути)
         panelEl.classList.add('hidden');
-        if (action === 'weekday') weekdayMenuEl.innerHTML = '';
-        if (action === 'child') childMenuEl.innerHTML = '';
         contentEl.innerHTML = '';
         btn.classList.remove('active');
+        currentSection = null;
         return;
       }
 
+      currentSection = action;
       setActiveButton(btn);
+      const snap = restoreSectionSnapshot(action);
+      const view = snap ? snap.view : null;
+
       if (action === 'weekday') {
-        showWeekdayMenu();
+        showWeekdayMenu(view && view.type === 'day' ? view.weekday : null);
+        if (!snap) currentView = { type: 'none' };
+        else loadWeekday(view.weekday);
       } else if (action === 'child') {
-        showChildMenu();
+        showChildMenu(view && view.type === 'person' ? view.name : null);
+        if (!snap) currentView = { type: 'none' };
+        else loadPersonWeek(view.name);
       } else {
         eventsPanelEl.classList.remove('hidden');
+        if (!snap) currentView = { type: 'eventsRange', start: eventsStartInput.value, end: eventsEndInput.value };
       }
       return;
     }
 
+    saveSectionSnapshot();
+    currentSection = action;
     setActiveButton(btn);
     Object.values(TOGGLE_PANELS).forEach(el => el.classList.add('hidden'));
+    restoreSectionSnapshot(action);
     loadAndRender(action);
   });
 });
@@ -207,6 +240,7 @@ function extractLastModified(payload) {
 async function loadWithCache(action, extraParams, render, force) {
   const key = cacheKeyFor(action, extraParams);
   const cached = readCache(key);
+  const myToken = ++renderToken;
 
   if (!force) {
     scrollToContent();
@@ -220,13 +254,16 @@ async function loadWithCache(action, extraParams, render, force) {
   try {
     const fresh = await fetchJson(action, extraParams);
     const freshLm = extractLastModified(fresh);
-    if (force || !cached || cached.lastModified !== freshLm) {
+    // Якщо користувач за цей час перемкнувся на інший розділ — не перезаписуємо екран
+    if (myToken === renderToken && (force || !cached || cached.lastModified !== freshLm)) {
       render(fresh);
     }
     writeCache(key, freshLm, fresh);
     if (force) showToast('Оновлено ✓');
   } catch (err) {
-    if (!cached) {
+    if (myToken !== renderToken) {
+      // застаріла відповідь — ігноруємо
+    } else if (!cached) {
       showError(err.message);
     } else {
       // Кеш лишається на екрані, але тепер явно повідомляємо, що оновлення не вдалося —
@@ -271,11 +308,11 @@ async function loadAndRender(action, force) {
   }
 }
 
-function showWeekdayMenu() {
+function showWeekdayMenu(activeWeekday) {
   weekdayMenuEl.innerHTML = '';
   WEEK_ORDER.forEach(weekday => {
     const btn = document.createElement('button');
-    btn.className = 'child-btn';
+    btn.className = 'child-btn' + (weekday === activeWeekday ? ' active' : '');
     btn.innerHTML = `<span>${escapeHtml(weekday)}</span>`;
     btn.addEventListener('click', () => {
       weekdayMenuEl.querySelectorAll('.child-btn').forEach(b => b.classList.toggle('active', b === btn));
@@ -298,11 +335,11 @@ async function loadWeekday(weekday, force) {
   }, force);
 }
 
-function showChildMenu() {
+function showChildMenu(activeName) {
   childMenuEl.innerHTML = '';
   KIDS.forEach(kid => {
     const btn = document.createElement('button');
-    btn.className = 'child-btn';
+    btn.className = 'child-btn' + (kid.name === activeName ? ' active' : '');
     btn.innerHTML = `<span class="ico">${kid.emoji}</span><span>${escapeHtml(kid.name)}</span>`;
     btn.addEventListener('click', () => {
       childMenuEl.querySelectorAll('.child-btn').forEach(b => b.classList.toggle('active', b === btn));
@@ -419,7 +456,21 @@ eventsShowBtn.addEventListener('click', () => {
   loadEventsRange(start, end, false);
 });
 
+// Після додавання/зміни/видалення події всі збережені екрани розкладу застаріли:
+// забуваємо їх і їхній кеш, щоб наступний клік завантажив свіжі дані.
+function invalidateScheduleViews() {
+  Object.keys(sectionSnapshots).forEach(key => {
+    if (key !== 'events') delete sectionSnapshots[key];
+  });
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('rozklad_cache_') && !k.startsWith('rozklad_cache_eventsRange'))
+      .forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+}
+
 function refreshEventsListIfShown() {
+  invalidateScheduleViews();
   if (currentView.type === 'eventsRange') {
     loadEventsRange(currentView.start, currentView.end, true);
   }
